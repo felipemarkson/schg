@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "schg"
+version = "0.1.0"
+description = ""
+authors = ["Felipe Markson dos Santos Monteiro <47871564+felipemarkson@users.noreply.github.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+result = "0.9.*"
+
+
+[tool.poetry.dev-dependencies]
+pytest = "7.*"
+flake8 = "6.*"
+black = "23.*"
+Flake8-pyproject = "1.*"
+mypy = "1.*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = "E203"
+extend-select = ["TC", "TC2"]
+type-checking-exempt-modules = "typing_extensions"
