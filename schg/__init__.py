@@ -1,6 +1,7 @@
 __version__ = "0.1.0"
 
 from abc import abstractmethod, ABC
+from copy import copy
 from enum import Enum, auto
 from typing import Iterable, List, Set, Tuple
 
@@ -18,6 +19,15 @@ class SwitchError(Enum):
 class State(Enum):
     ON = 1
     OFF = 0
+
+    def __repr__(self) -> str:
+        if self == State.ON:
+            return "ON"
+        else:
+            return "OFF"
+
+    def __str__(self) -> str:
+        return self.__repr__()
 
 
 class Switch(ABC):
@@ -51,6 +61,12 @@ class Switch(ABC):
 
     def __hash__(self) -> int:
         return hash(self.name)
+
+    def __repr__(self) -> str:
+        return f"SW({self.name}, {self.state})"
+
+    def __str__(self) -> str:
+        return self.__repr__()
 
 
 _SetSw = Set["Switch"]
@@ -109,7 +125,7 @@ class OffLoad(Switch):
         self.__state = State(not self.__state.value)
 
 
-class _Link:
+class Link:
     def __init__(self, sw1: Switch, sw2: Switch) -> None:
         if sw1 == sw2:
             raise ValueError(LinkError.SELF_LINKING)
@@ -129,47 +145,92 @@ class _Link:
         return self.switches[0].ison and self.switches[1].ison
 
     def __eq__(self, __o: object) -> bool:
-        if isinstance(__o, _Link):
+        if isinstance(__o, Link):
             return self.switches == __o.switches
         return False
 
     def __hash__(self) -> int:
         return hash(self.switches)
 
+    def __repr__(self) -> str:
+        sw1, sw2 = self.switches
+        return f"Link({sw1.name}, {sw2.name})"
 
-_LinkSet = Set[_Link]
+    def __str__(self) -> str:
+        return self.__repr__()
+
+
+LinkSet = Set[Link]
 
 
 class System:
     def __init__(self) -> None:
         self.__switches: _SetSw = set()
-        self._links: _LinkSet = set()
+        self._links: LinkSet = set()
 
     def link(self, sw1: Switch, sw2: Switch) -> None:
         self.__switches.add(sw1)
         self.__switches.add(sw2)
-        self._links.add(_Link(sw1, sw2))
+        self._links.add(Link(sw1, sw2))
+
+    @property
+    def links(self) -> List[Link]:
+        return sorted(
+            self._links,
+            key=lambda link: link.switches[0].name + link.switches[1].name,
+        )
 
     def __switches_connected(self, sw: Switch) -> Iterable[Switch]:
-        for link in self._links:
+        for link in self.links:
             if not link.ison:
                 continue
             if sw not in link.switches:
                 continue
 
-            yield (_sw for _sw in link.switches if _sw != sw).__next__()
+            sw1, sw2 = link.switches
+            next_sw = sw1 if sw1 != sw else sw2
+
+            yield next_sw
+
+    @property
+    def swicthes(self) -> List[Switch]:
+        return sorted(self.__switches, key=lambda sw: sw.name)
 
     @property
     def ismeshed(self) -> bool:
-        number_switches_on = sum(1 for sw in self.__switches if sw.ison)
-        number_link_on = sum(1 for link in self._links if link.ison)
+        number_switches_on = sum(1 for sw in self.swicthes if sw.ison)
+        number_link_on = sum(1 for link in self.links if link.ison)
         return not (number_link_on == (number_switches_on - 1))
 
-    # @property
-    # def is_substations_connected(self) -> bool:
-    #     for sw in self.__switches:
+    @property
+    def is_substations_connected(self) -> bool:
+        for sw in self.swicthes:
+            if self.__substations_connected(sw):
+                return True
 
-    #     return False
+        return False
 
-    # @property
-    # def ismeshed(self) -> bool:
+    def __substations_connected(
+        self,
+        sw: Switch,
+        count: int = 0,
+        visited: List[Switch] = [],
+    ) -> bool:
+        visited.append(sw)
+        if sw.on_substation:
+            count += 1
+
+        if count > 1:
+            return True
+
+        sws = self.__switches_connected(sw)
+
+        for next_sw in sws:
+            if next_sw == sw:
+                continue
+            if next_sw in visited:
+                continue
+            if self.__substations_connected(next_sw, count, copy(visited)):
+                return True
+
+        return False

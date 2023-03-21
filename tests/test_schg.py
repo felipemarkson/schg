@@ -131,9 +131,9 @@ def test_three_switches_togle_mesh() -> None:
 
 
 def test_three_switches_not_substations_connected() -> None:
-    sw0 = OnLoad("sw0", State.ON, on_substation=True)
-    sw1 = OffLoad("sw1", State.ON)
-    sw2 = OnLoad("sw2", State.OFF)
+    sw0 = OnLoad("sw0_", State.ON, on_substation=True)
+    sw1 = OffLoad("sw1_", State.ON)
+    sw2 = OnLoad("sw2_", State.OFF)
     sys = System()
 
     sys.link(sw0, sw1)
