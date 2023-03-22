@@ -126,6 +126,20 @@ def test_two_switches_toggle_second_not_meshed() -> None:
     assert not sys.ismeshed
 
 
+def test_two_switches_substations_connected() -> None:
+    sw0 = OnLoad(str(uuid1()), State.ON, on_substation=True)
+    sw1 = OnLoad(str(uuid1()), State.OFF, on_substation=True)
+    sys = System()
+
+    sys.link(sw0, sw1)
+
+    try:
+        sw1.togle_state()
+        assert False
+    except SCHGError as e:
+        assert e.args[0] == [SwitchingError.CAUSES_SUBSTATIONS_INTERCONNECTION]
+
+
 def test_three_switches_not_meshed() -> None:
     sw0 = OnLoad(str(uuid1()), State.ON, on_substation=True)
     sw1 = OffLoad(str(uuid1()), State.ON)
