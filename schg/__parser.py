@@ -88,17 +88,22 @@ class __Raw:
 
 
 def __get_definition(
-    cmd: str, getname_func: Callable[[str], str], is_dss: bool = True
+    cmd: str, getname_func: Callable[[str], str], tag: str
 ) -> Optional[__Raw]:
+    start_index = 0
     try:
         name = getname_func(cmd)
-        if is_dss:
-            tags = cmd.lower().strip().split(TAG)[1].split()
-
+    except IndexError:
+        return None
+    try:
+        tags = cmd.lower().strip().split(tag)[1].split()
+    except ValueError:
+        tags = cmd.lower().strip().split()
+        start_index += 1
     except IndexError:
         return None
 
-    type_sw = tags[0]
+    type_sw = tags[start_index]
     sw_type: Optional[Type[Switch]] = None
     if type_sw == OFF_LOAD_TAG:
         sw_type = OffLoad
@@ -107,7 +112,7 @@ def __get_definition(
     else:
         raise ValueError(f"Switch type not founded on :{cmd}")
 
-    state = tags[1]
+    state = tags[start_index + 1]
     sw_state: Optional[State] = None
     if state == ON_TAG:
         sw_state = State.ON
@@ -116,9 +121,9 @@ def __get_definition(
     else:
         raise ValueError(f"Switch state not founded on :{cmd}")
 
-    link_index = 2
+    link_index = start_index + 2
     onsub = False
-    if tags[2] == SUB_TAG:
+    if tags[link_index] == SUB_TAG:
         link_index += 1
         if type_sw == OFF_LOAD_TAG:
             raise ValueError(f"Switch type {OFF_LOAD_TAG} is on substation :{cmd}")
@@ -137,11 +142,11 @@ def __get_definition(
 
 
 def get_raws(
-    list_cmd: List[str], getname_func: Callable[[str], str]
+    list_cmd: List[str], getname_func: Callable[[str], str], tag: str = TAG
 ) -> Dict[str, __Raw]:
     __raws: Dict[str, __Raw] = {}
     for cmd in list_cmd:
-        __raw = __get_definition(cmd, getname_func)
+        __raw = __get_definition(cmd, getname_func, tag)
         if __raw is None:
             continue
         __raws[__raw.name] = __raw
