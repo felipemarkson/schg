@@ -4,7 +4,7 @@ _A packaged to identify problems in switching on eletricity distribution systems
 
 There are two types of switches:
 
-- `OnLoad`: Which can change its the state (toggle) with energy (Eg: protection devices)
+- `OnLoad`: Which can change its the state (toggle) with energy (Eg: protection devices). This switches could be in the substation.
 - `OffLoad`: Which can not change its the state (toggle) with energy.
 
 When the operator try to operate these switches, the follow problems could occours:
@@ -38,7 +38,7 @@ sw2.toggle_state() # It will raise if any problem happen.
 ### For `.schg` files:
 
 #### Syntax
-`{name} {type} {state} {substation (required only for OnLoad type)} {name of switches linked}`
+`{name} {type} {state} {substation (only for OnLoad type)} {name of switches linked}`
 
 #### Example
 
@@ -46,7 +46,7 @@ In the `.schg` file:
 ```
 sw1 OnLoad ON substation sw2 sw3
 sw2 OffLoad ON sw1 sw3
-sw3 OnLoad OFF substation sw2 sw1
+sw3 OnLoad OFF sw2 sw1
 ```
 
 In the python file:
