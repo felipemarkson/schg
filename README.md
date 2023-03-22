@@ -60,7 +60,7 @@ sys.toggle_sw("sw3")  # It will raise if any problem happen.
 ### For `.dss` files:
 
 #### Syntax
-`New Line.{name}... {// or !} schg: {type} {state} {substation (required only for OnLoad type)} {name of switches linked}`
+`New Line.{name}... {// or !} schg: {type} {state} {substation (only for OnLoad type)} {name of switches linked}`
 `
 
 #### Example
@@ -68,7 +68,8 @@ sys.toggle_sw("sw3")  # It will raise if any problem happen.
 In the `.dss` file:
 ```
 New Line.SW1 Phases=3  ... // schg: OnLoad ON substation SW2
-New Line.SW2 Phases=3  ... ! schg: OffLoad ON substation SW1
+New Line.SW2 Phases=3  ... ! schg: OffLoad ON SW1
+New Line.SW3 Phases=3  ... ! schg: OnLoad ON SW2
 ```
 
 In the python file:
