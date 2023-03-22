@@ -200,72 +200,48 @@ def test_three_switches_substations_connected() -> None:
         assert e.args[0] == [SwitchingError.CAUSES_SUBSTATIONS_INTERCONNECTION]
 
 
-# def test_two_switches_toggle_state_same_state() -> None:
-#     sw0 = OnLoad(str(uuid1()), State.ON, on_substation=True)
-#     sw1 = OffLoad(str(uuid1()), State.ON)
-#     sys = System()
-#     sys.link(sw0, sw1)
+def test_two_switches_toggle_state_to_off_offload_on_load() -> None:
+    sw0 = OnLoad(str(uuid1()), State.ON, on_substation=True)
+    sw1 = OffLoad(str(uuid1()), State.ON)
+    sys = System()
+    sys.link(sw0, sw1)
 
-#     try:
-#         sw1.togle_state()
-#         assert False
-#     except SCHGError as e:
-#         assert e.args[0] == [SwitchingError.CAUSES_SUBSTATIONS_INTERCONNECTION]
-
-#     assert sw1.togle_state() == Err(SwitchError.ONLOAD_NOT_POSSIBLE)
+    try:
+        sw1.togle_state()
+        assert False
+    except SCHGError as e:
+        assert e.args[0] == [SwitchingError.OFFLOAD_SWITCHING_ON_LOAD]
 
 
-# def test_two_switches_toggle_state_state_different() -> None:
-#     sw0 = OnLoad(str(uuid1()), State.ON, on_substation=True)
-#     sw1 = OffLoad(str(uuid1()), State.OFF)
-#     link(sw0, sw1)
+def test_two_switches_toggle_state_to_on_offload_on_load() -> None:
+    sw0 = OnLoad(str(uuid1()), State.ON, on_substation=True)
+    sw1 = OffLoad(str(uuid1()), State.OFF)
+    sys = System()
+    sys.link(sw0, sw1)
 
-#     assert sw1.togle_state() == Err(SwitchError.ONLOAD_NOT_POSSIBLE)
-
-
-# def test_two_switches_toggle_state_island_frist() -> None:
-#     sw0 = OffLoad(str(uuid1()), State.ON)
-#     sw1 = OffLoad(str(uuid1()), State.ON)
-#     link(sw0, sw1)
-
-#     assert sw0.togle_state() == Ok()
+    try:
+        sw1.togle_state()
+        assert False
+    except SCHGError as e:
+        assert e.args[0] == [SwitchingError.OFFLOAD_SWITCHING_ON_LOAD]
 
 
-# def test_two_switches_toggle_state_island_second() -> None:
-#     sw0 = OffLoad(str(uuid1()), State.ON)
-#     sw1 = OffLoad(str(uuid1()), State.ON)
-#     link(sw0, sw1)
+def test_three_switches_toggle_state_to_off_offload_on_load_and_sub_connection() -> (
+    None
+):
+    sw0 = OnLoad(str(uuid1()), State.ON, on_substation=True)
+    sw1 = OffLoad(str(uuid1()), State.OFF)
+    sw2 = OnLoad(str(uuid1()), State.ON, on_substation=True)
+    sys = System()
 
-#     assert sw1.togle_state() == Ok()
+    sys.link(sw0, sw1)
+    sys.link(sw1, sw2)
 
-
-# def test_three_switches_err_on_togle_offload() -> None:
-#     sw0 = OnLoad(str(uuid1()), State.ON, on_substation=True)
-#     sw1 = OffLoad(str(uuid1()), State.ON)
-#     sw2 = OnLoad(str(uuid1()), State.OFF)
-#     assert link(sw0, sw1) == Ok()
-#     assert link(sw1, sw2) == Ok()
-#     assert link(sw2, sw0) == Ok()
-
-#     assert sw1.togle_state() == Err(SwitchError.ONLOAD_NOT_POSSIBLE)
-
-
-# def test_three_switches_err_on_togle_mesh() -> None:
-#     sw0 = OnLoad(str(uuid1()), State.ON, on_substation=True)
-#     sw1 = OffLoad(str(uuid1()), State.ON)
-#     sw2 = OnLoad(str(uuid1()), State.OFF)
-#     assert link(sw0, sw1) == Ok()
-#     assert link(sw1, sw2) == Ok()
-#     assert link(sw2, sw0) == Ok()
-
-#     assert sw2.togle_state() == Err(SwitchError.CAUSES_MESH)
-
-
-# def test_three_switches_err_on_togle_mesh_by_substation() -> None:
-#     sw0 = OnLoad(str(uuid1()), State.ON, on_substation=True)
-#     sw1 = OffLoad(str(uuid1()), State.ON)
-#     sw2 = OnLoad(str(uuid1()), State.OFF, on_substation=True)
-#     assert link(sw0, sw1) == Ok()
-#     assert link(sw1, sw2) == Ok()
-
-#     assert sw2.togle_state() == Err(SwitchError.CAUSES_MESH)
+    try:
+        sw1.togle_state()
+        assert False
+    except SCHGError as e:
+        assert e.args[0] == [
+            SwitchingError.CAUSES_SUBSTATIONS_INTERCONNECTION,
+            SwitchingError.OFFLOAD_SWITCHING_ON_LOAD,
+        ]

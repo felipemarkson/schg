@@ -12,7 +12,7 @@ class LinkError(Enum):
 
 
 class SwitchingError(Enum):
-    OFFLOAD_TRYING_ON_LOAD = auto()
+    OFFLOAD_SWITCHING_ON_LOAD = auto()
     CAUSES_MESH = auto()
     CAUSES_SUBSTATIONS_INTERCONNECTION = auto()
     SYSTEM_NOT_DEFINED = auto()
@@ -52,9 +52,16 @@ class Switch(ABC):
     def state(self) -> State:
         ...
 
-    @state.setter
+    @property
     @abstractmethod
-    def state(self, state: State) -> None:
+    def _state(self) -> State:
+        """Don't use it. Use sw.state instead"""
+        ...
+
+    @_state.setter
+    @abstractmethod
+    def _state(self, state: State) -> None:
+        """Don't use it. Use sw.togle_state() instead"""
         ...
 
     @property
@@ -123,8 +130,12 @@ class OnLoad(Switch):
     def state(self) -> State:
         return self.__state
 
-    @state.setter
-    def state(self, state: State) -> None:
+    @property
+    def _state(self) -> State:
+        return self.__state
+
+    @_state.setter
+    def _state(self, state: State) -> None:
         self.__state = state
 
     @property
@@ -164,8 +175,12 @@ class OffLoad(Switch):
     def state(self) -> State:
         return self.__state
 
-    @state.setter
-    def state(self, state: State) -> None:
+    @property
+    def _state(self) -> State:
+        return self.__state
+
+    @_state.setter
+    def _state(self, state: State) -> None:
         self.__state = state
 
     @property
@@ -177,6 +192,11 @@ class OffLoad(Switch):
         self._sys = sys
 
     def togle_state(self) -> None:
+        """Try to toggle the switch
+
+        Raises:
+            SCHGError: Raises when some SwitchingError occurs
+        """
         erros = self._notify()
         if len(erros) > 0:
             raise SCHGError(erros)
@@ -227,6 +247,15 @@ class System:
         self._links: LinkSet = set()
 
     def link(self, sw1: Switch, sw2: Switch) -> None:
+        """Link two switches
+
+        Args:
+            sw1 (Switch): Switch 1
+            sw2 (Switch): Switch 2
+        Raises:
+            SCHGError: Raises when some LinkError occurs
+        """
+
         self.__switches.add(sw1)
         self.__switches.add(sw2)
         self._links.add(Link(sw1, sw2))
@@ -265,7 +294,7 @@ class System:
     @property
     def is_substations_connected(self) -> bool:
         for sw in self.swicthes:
-            if self.__substations_connected(sw):
+            if self.__substations_connected(sw, allowed=1):
                 return True
 
         return False
@@ -273,14 +302,17 @@ class System:
     def __substations_connected(
         self,
         sw: Switch,
+        allowed: int,
         count: int = 0,
-        visited: List[Switch] = [],
+        visited: Optional[List[Switch]] = None,
     ) -> bool:
+        if visited is None:
+            visited = []
         visited.append(sw)
         if sw.on_substation:
             count += 1
 
-        if count > 1:
+        if count > allowed:
             return True
 
         sws = self.__switches_connected(sw)
@@ -290,14 +322,26 @@ class System:
                 continue
             if next_sw in visited:
                 continue
-            if self.__substations_connected(next_sw, count, copy(visited)):
+            if self.__substations_connected(next_sw, allowed, count, visited):
                 return True
 
         return False
 
+    def offload_trying_on_load(self, sw: Switch) -> bool:
+        if not isinstance(sw, OffLoad):
+            return False
+
+        initial_state = copy(sw._state)
+        if initial_state == State.OFF:
+            sw._state = State.ON
+
+        value = self.__substations_connected(sw, allowed=0)
+        sw._state = initial_state
+        return value
+
     def inform_change(self, sw: Switch) -> List[SwitchingError]:
         state_initial = copy(sw.state)
-        sw.state = State(not sw.state.value)
+        sw._state = State(not sw.state.value)
 
         error = []
         if self.ismeshed:
@@ -306,8 +350,9 @@ class System:
         if self.is_substations_connected:
             error.append(SwitchingError.CAUSES_SUBSTATIONS_INTERCONNECTION)
 
-        sw.state = state_initial
+        if self.offload_trying_on_load(sw):
+            error.append(SwitchingError.OFFLOAD_SWITCHING_ON_LOAD)
+
+        sw._state = state_initial
 
         return error
-
-        ...
