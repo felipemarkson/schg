@@ -8,5 +8,6 @@ from .__base import (  # noqa
     SwitchingError,
     SCHGError,
 )
+from .__dss import FromDSS  # noqa
 
 __version__ = "0.1.0"
