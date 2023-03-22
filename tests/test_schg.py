@@ -1,4 +1,4 @@
-from schg import LinkError, OnLoad, OffLoad, State, System
+from schg import LinkError, OnLoad, OffLoad, SCHGError, State, SwitchingError, System
 
 
 def test_two_switches_with_same_name_returns_same_hash() -> None:
@@ -13,6 +13,26 @@ def test_two_switches_with_same_name_are_equal() -> None:
     sw1 = OffLoad("sw1", State.ON)
 
     assert sw0 == sw1
+
+
+def test_onload_toggle_no_system() -> None:
+    sw0 = OnLoad("sw1", State.ON)
+
+    try:
+        sw0.togle_state()
+        assert False
+    except SCHGError as e:
+        assert e.args[0] == [SwitchingError.SYSTEM_NOT_DEFINED]
+
+
+def test_offload_toggle_no_system() -> None:
+    sw0 = OffLoad("sw1", State.ON)
+
+    try:
+        sw0.togle_state()
+        assert False
+    except SCHGError as e:
+        assert e.args[0] == [SwitchingError.SYSTEM_NOT_DEFINED]
 
 
 def test_two_switches_common_link() -> None:
@@ -30,8 +50,8 @@ def test_two_switches_equal_link() -> None:
     try:
         sys.link(sw0, sw1)
         assert False
-    except ValueError as exception:
-        assert exception.args[0] == LinkError.SELF_LINKING
+    except SCHGError as exception:
+        assert exception.args[0] == [LinkError.SELF_LINKING]
 
 
 def test_two_switches_equal_different_type() -> None:
@@ -42,8 +62,8 @@ def test_two_switches_equal_different_type() -> None:
     try:
         sys.link(sw0, sw1)
         assert False
-    except ValueError as exception:
-        assert exception.args[0] == LinkError.SELF_LINKING
+    except SCHGError as exception:
+        assert exception.args[0] == [LinkError.SELF_LINKING]
 
 
 def test_two_switches_substations_different_state_1() -> None:
@@ -68,8 +88,8 @@ def test_two_switches_substations_same_state_ON() -> None:
     try:
         sys.link(sw0, sw1)
         assert False, "This must error"
-    except ValueError as exception:
-        assert exception.args[0] == LinkError.SUBSTATION_LINKING
+    except SCHGError as exception:
+        assert exception.args[0] == [LinkError.SUBSTATION_LINKING]
 
 
 def test_two_switches_substations_same_state_OFF() -> None:
@@ -124,16 +144,17 @@ def test_three_switches_togle_mesh() -> None:
     sys.link(sw0, sw1)
     sys.link(sw1, sw2)
     sys.link(sw2, sw0)
-
-    sw2.togle_state()
-
-    assert sys.ismeshed
+    try:
+        sw2.togle_state()
+        assert False
+    except SCHGError as e:
+        assert e.args[0] == [SwitchingError.CAUSES_MESH]
 
 
 def test_three_switches_not_substations_connected() -> None:
-    sw0 = OnLoad("sw0_", State.ON, on_substation=True)
-    sw1 = OffLoad("sw1_", State.ON)
-    sw2 = OnLoad("sw2_", State.OFF)
+    sw0 = OnLoad("sw0", State.ON, on_substation=True)
+    sw1 = OffLoad("sw1", State.ON)
+    sw2 = OnLoad("sw2", State.OFF)
     sys = System()
 
     sys.link(sw0, sw1)
@@ -145,17 +166,19 @@ def test_three_switches_not_substations_connected() -> None:
 
 
 def test_three_switches_substations_connected() -> None:
-    sw0 = OnLoad("sw0", State.ON, on_substation=True)
-    sw1 = OffLoad("sw1", State.ON)
-    sw2 = OnLoad("sw2", State.OFF, on_substation=True)
+    sw0 = OnLoad("sw0_", State.ON, on_substation=True)
+    sw1 = OffLoad("sw1_", State.ON)
+    sw2 = OnLoad("sw2_", State.OFF, on_substation=True)
     sys = System()
 
     sys.link(sw0, sw1)
     sys.link(sw1, sw2)
 
-    sw2.togle_state()
-
-    assert sys.is_substations_connected
+    try:
+        sw2.togle_state()
+        assert False
+    except SCHGError as e:
+        assert e.args[0] == [SwitchingError.CAUSES_SUBSTATIONS_INTERCONNECTION]
 
 
 # def test_two_switches_toggle_state_same_state() -> None:

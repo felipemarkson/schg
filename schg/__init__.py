@@ -3,7 +3,7 @@ __version__ = "0.1.0"
 from abc import abstractmethod, ABC
 from copy import copy
 from enum import Enum, auto
-from typing import Iterable, List, Set, Tuple
+from typing import Iterable, List, Optional, Set, Tuple
 
 
 class LinkError(Enum):
@@ -11,9 +11,15 @@ class LinkError(Enum):
     SUBSTATION_LINKING = auto()
 
 
-class SwitchError(Enum):
-    ONLOAD_NOT_POSSIBLE = auto()
+class SwitchingError(Enum):
+    OFFLOAD_TRYING_ON_LOAD = auto()
     CAUSES_MESH = auto()
+    CAUSES_SUBSTATIONS_INTERCONNECTION = auto()
+    SYSTEM_NOT_DEFINED = auto()
+
+
+class SCHGError(Exception):
+    pass
 
 
 class State(Enum):
@@ -46,6 +52,21 @@ class Switch(ABC):
     def state(self) -> State:
         ...
 
+    @state.setter
+    @abstractmethod
+    def state(self, state: State) -> None:
+        ...
+
+    @property
+    @abstractmethod
+    def sys(self) -> Optional["System"]:
+        ...
+
+    @sys.setter
+    @abstractmethod
+    def sys(self, sys: "System") -> None:
+        ...
+
     @property
     def ison(self) -> bool:
         return bool(self.state.value)
@@ -53,6 +74,11 @@ class Switch(ABC):
     @abstractmethod
     def togle_state(self) -> None:
         ...
+
+    def _notify(self) -> List[SwitchingError]:
+        if self.sys is None:
+            return [SwitchingError.SYSTEM_NOT_DEFINED]
+        return self.sys.inform_change(self)
 
     def __eq__(self, __o: object) -> bool:
         if isinstance(__o, Switch):
@@ -83,6 +109,7 @@ class OnLoad(Switch):
         self._name = name
         self.__state = initial_state
         self._on_substation = on_substation
+        self._sys: Optional["System"] = None
 
     @property
     def on_substation(self) -> bool:
@@ -96,7 +123,22 @@ class OnLoad(Switch):
     def state(self) -> State:
         return self.__state
 
+    @state.setter
+    def state(self, state: State) -> None:
+        self.__state = state
+
+    @property
+    def sys(self) -> Optional["System"]:
+        return self._sys
+
+    @sys.setter
+    def sys(self, sys: "System") -> None:
+        self._sys = sys
+
     def togle_state(self) -> None:
+        erros = self._notify()
+        if len(erros) > 0:
+            raise SCHGError(erros)
         self.__state = State(not self.__state.value)
 
 
@@ -108,6 +150,7 @@ class OffLoad(Switch):
     ) -> None:
         self.__name = name
         self.__state = initial_state
+        self._sys: Optional["System"] = None
 
     @property
     def on_substation(self) -> bool:
@@ -121,17 +164,32 @@ class OffLoad(Switch):
     def state(self) -> State:
         return self.__state
 
+    @state.setter
+    def state(self, state: State) -> None:
+        self.__state = state
+
+    @property
+    def sys(self) -> Optional["System"]:
+        return self._sys
+
+    @sys.setter
+    def sys(self, sys: "System") -> None:
+        self._sys = sys
+
     def togle_state(self) -> None:
+        erros = self._notify()
+        if len(erros) > 0:
+            raise SCHGError(erros)
         self.__state = State(not self.__state.value)
 
 
 class Link:
     def __init__(self, sw1: Switch, sw2: Switch) -> None:
         if sw1 == sw2:
-            raise ValueError(LinkError.SELF_LINKING)
+            raise SCHGError([LinkError.SELF_LINKING])
 
         if sw1.on_substation and sw2.on_substation and sw1.ison and sw2.ison:
-            raise ValueError(LinkError.SUBSTATION_LINKING)
+            raise SCHGError([LinkError.SUBSTATION_LINKING])
 
         self._link = set([sw1, sw2])
 
@@ -172,6 +230,8 @@ class System:
         self.__switches.add(sw1)
         self.__switches.add(sw2)
         self._links.add(Link(sw1, sw2))
+        sw1.sys = self
+        sw2.sys = self
 
     @property
     def links(self) -> List[Link]:
@@ -234,3 +294,20 @@ class System:
                 return True
 
         return False
+
+    def inform_change(self, sw: Switch) -> List[SwitchingError]:
+        state_initial = copy(sw.state)
+        sw.state = State(not sw.state.value)
+
+        error = []
+        if self.ismeshed:
+            error.append(SwitchingError.CAUSES_MESH)
+
+        if self.is_substations_connected:
+            error.append(SwitchingError.CAUSES_SUBSTATIONS_INTERCONNECTION)
+
+        sw.state = state_initial
+
+        return error
+
+        ...
