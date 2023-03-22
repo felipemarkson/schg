@@ -59,7 +59,7 @@ class Switch(ABC):
     @_state.setter
     @abstractmethod
     def _state(self, state: State) -> None:
-        """Don't use it. Use sw.togle_state() instead"""
+        """Don't use it. Use sw.toggle_state() instead"""
         ...
 
     @property
@@ -77,7 +77,7 @@ class Switch(ABC):
         return bool(self.state.value)
 
     @abstractmethod
-    def togle_state(self) -> None:
+    def toggle_state(self) -> None:
         ...
 
     def _notify(self) -> List[SwitchingError]:
@@ -144,7 +144,7 @@ class OnLoad(Switch):
     def sys(self, sys: "System") -> None:
         self._sys = sys
 
-    def togle_state(self) -> None:
+    def toggle_state(self) -> None:
         erros = self._notify()
         if len(erros) > 0:
             raise SCHGError(erros)
@@ -189,7 +189,7 @@ class OffLoad(Switch):
     def sys(self, sys: "System") -> None:
         self._sys = sys
 
-    def togle_state(self) -> None:
+    def toggle_state(self) -> None:
         """Try to toggle the switch
 
         Raises:

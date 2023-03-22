@@ -16,7 +16,7 @@ def test_raise_error() -> None:
     path = "tests/simple_dss/master.dss"
     sys = FromDSS(path)
     try:
-        sys.togle_sw("671692")
+        sys.toggle_sw("671692")
         assert False
     except SCHGError as e:
         assert e.args[0] == [SwitchingError.OFFLOAD_SWITCHING_ON_LOAD]
@@ -26,7 +26,7 @@ def test_raise_error2() -> None:
     path = "tests/simple_dss/master.dss"
     sys = FromDSS(path)
     try:
-        sys.togle_sw("virtual2")
+        sys.toggle_sw("virtual2")
         assert False
     except SCHGError as e:
         assert e.args[0] == [

@@ -42,5 +42,5 @@ class FromFile:
                 sw2 = self.switches[link]
                 self.sys.link(sw1, sw2)
 
-    def togle_sw(self, name: str) -> None:
-        self.switches[name.lower()].togle_state()
+    def toggle_sw(self, name: str) -> None:
+        self.switches[name.lower()].toggle_state()

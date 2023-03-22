@@ -22,7 +22,7 @@ def test_onload_toggle_no_system() -> None:
     sw0 = OnLoad(str(uuid1()), State.ON)
 
     try:
-        sw0.togle_state()
+        sw0.toggle_state()
         assert False
     except SCHGError as e:
         assert e.args[0] == [SwitchingError.SYSTEM_NOT_DEFINED]
@@ -32,7 +32,7 @@ def test_offload_toggle_no_system() -> None:
     sw0 = OffLoad(str(uuid1()), State.ON)
 
     try:
-        sw0.togle_state()
+        sw0.toggle_state()
         assert False
     except SCHGError as e:
         assert e.args[0] == [SwitchingError.SYSTEM_NOT_DEFINED]
@@ -110,7 +110,7 @@ def test_two_switches_toggle_first_not_meshed() -> None:
     sys = System()
     sys.link(sw0, sw1)
 
-    sw0.togle_state()
+    sw0.toggle_state()
 
     assert not sys.ismeshed
 
@@ -121,7 +121,7 @@ def test_two_switches_toggle_second_not_meshed() -> None:
     sys = System()
     sys.link(sw0, sw1)
 
-    sw0.togle_state()
+    sw0.toggle_state()
 
     assert not sys.ismeshed
 
@@ -134,7 +134,7 @@ def test_two_switches_substations_connected() -> None:
     sys.link(sw0, sw1)
 
     try:
-        sw1.togle_state()
+        sw1.toggle_state()
         assert False
     except SCHGError as e:
         assert e.args[0] == [SwitchingError.CAUSES_SUBSTATIONS_INTERCONNECTION]
@@ -149,12 +149,12 @@ def test_three_switches_not_meshed() -> None:
     sys.link(sw0, sw1)
     sys.link(sw1, sw2)
 
-    sw2.togle_state()
+    sw2.toggle_state()
 
     assert not sys.ismeshed
 
 
-def test_three_switches_togle_mesh() -> None:
+def test_three_switches_toggle_mesh() -> None:
     sw0 = OnLoad(str(uuid1()), State.ON, on_substation=True)
     sw1 = OffLoad(str(uuid1()), State.ON)
     sw2 = OnLoad(str(uuid1()), State.OFF)
@@ -164,7 +164,7 @@ def test_three_switches_togle_mesh() -> None:
     sys.link(sw1, sw2)
     sys.link(sw2, sw0)
     try:
-        sw2.togle_state()
+        sw2.toggle_state()
         assert False
     except SCHGError as e:
         assert e.args[0] == [SwitchingError.CAUSES_MESH]
@@ -179,7 +179,7 @@ def test_three_switches_not_substations_connected() -> None:
     sys.link(sw0, sw1)
     sys.link(sw1, sw2)
 
-    sw2.togle_state()
+    sw2.toggle_state()
 
     assert not sys.is_substations_connected
 
@@ -194,7 +194,7 @@ def test_three_switches_substations_connected() -> None:
     sys.link(sw1, sw2)
 
     try:
-        sw2.togle_state()
+        sw2.toggle_state()
         assert False
     except SCHGError as e:
         assert e.args[0] == [SwitchingError.CAUSES_SUBSTATIONS_INTERCONNECTION]
@@ -207,7 +207,7 @@ def test_two_switches_toggle_state_to_off_offload_on_load() -> None:
     sys.link(sw0, sw1)
 
     try:
-        sw1.togle_state()
+        sw1.toggle_state()
         assert False
     except SCHGError as e:
         assert e.args[0] == [SwitchingError.OFFLOAD_SWITCHING_ON_LOAD]
@@ -220,7 +220,7 @@ def test_two_switches_toggle_state_to_on_offload_on_load() -> None:
     sys.link(sw0, sw1)
 
     try:
-        sw1.togle_state()
+        sw1.toggle_state()
         assert False
     except SCHGError as e:
         assert e.args[0] == [SwitchingError.OFFLOAD_SWITCHING_ON_LOAD]
@@ -238,7 +238,7 @@ def test_three_switches_toggle_state_to_off_offload_on_load_and_sub_connection()
     sys.link(sw1, sw2)
 
     try:
-        sw1.togle_state()
+        sw1.toggle_state()
         assert False
     except SCHGError as e:
         assert e.args[0] == [
